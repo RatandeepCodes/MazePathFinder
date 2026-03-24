@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Maze Path Finder</title>
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+  <!-- unified top navigation bar -->
+  <div class="topbar">
+    <div class="brand">
+      <span class="brand-ss">Maze</span>
+      <span class="brand-ex">Path Finder</span>
+    </div>
+
+    <div class="tb-sep"></div>
+
+    <span class="tb-title" id="tb-title">Maze Pathfinding</span>
+    <div class="tb-sep"></div>
+
+    <select class="sel" id="algo-sel" onchange="onAlgoChange()"></select>
+    <button class="btn run" id="run-btn" onclick="doRun()">&#9654; Run</button>
+    <button class="btn" onclick="doReset()">&#8635; Reset</button>
+    <button class="btn warn" onclick="doClear()">&#x2715; Clear</button>
+
+    <!-- extra buttons per problem go here -->
+    <div id="extra-tools"></div>
+
+    <div class="sp"></div>
+
+    <span class="step-pill" id="step-pill">Steps: 0</span>
+    <div class="tb-sep"></div>
+
+    <button class="sound-btn" id="sound-btn" onclick="toggleSound()" title="Toggle sound">🔊</button>
+  </div>
+
+  <div class="body">
+
+    <!-- sidebar with problem info -->
+    <div class="sidebar" id="sidebar">
+      <div class="problem-info-section">
+        <div class="pi-label">Problem Statement</div>
+        <div class="problem-statement" id="problem-statement">
+          Navigate through a grid maze to find the shortest path from the starting point (purple) to the goal (red). You can draw walls to create obstacles or erase them. Watch as different search algorithms explore the maze and find optimal paths.
+        </div>
+        <div class="pi-label">State Space</div>
+        <div class="state-space-info">
+          <div class="state-item">
+            <div class="state-icon" style="background:#6f42c1"></div>
+            <span>Start State</span>
+          </div>
+          <div class="state-item">
+            <div class="state-icon" style="background:#dc3545"></div>
+            <span>Goal State</span>
+          </div>
+          <div class="state-item">
+            <div class="state-icon" style="background:#6c757d"></div>
+            <span>Wall/Obstacle</span>
+          </div>
+          <div class="state-item">
+            <div class="state-icon" style="background:#ffffff;border:1px solid #dee2e6"></div>
+            <span>Open Path</span>
+          </div>
+          <div class="state-desc">
+            Each grid cell represents a state. The state space consists of all possible positions (x,y) on the grid, with transitions between adjacent cells (up, down, left, right) unless blocked by walls.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="main">
+
+      <div class="workspace">
+
+        <!-- main canvas area -->
+        <div class="canvas-wrap">
+          <div class="canvas-area" id="canvas-area">
+            <canvas id="cv"></canvas>
+          </div>
+
+          <!-- status bar -->
+          <div class="status-bar">
+            <div class="phase-dot" id="phase-dot" style="background:var(--mut)"></div>
+            <span class="phase-txt" id="phase-txt" style="color:var(--mut)">READY</span>
+            <span class="status-msg" id="status-msg">Select an algorithm and click Run</span>
+            <div class="sc-row">
+              <div class="sc"><div class="sc-v" id="sc0">0</div><div class="sc-k">Visited</div></div>
+              <div class="sc"><div class="sc-v" id="sc1">0</div><div class="sc-k">Frontier</div></div>
+              <div class="sc"><div class="sc-v" id="sc2">--</div><div class="sc-k">Result</div></div>
+              <div class="sc"><div class="sc-v" id="sc3">0ms</div><div class="sc-k">Time</div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- right side info panel -->
+        <div class="info">
+          <div class="ip-sec">
+            <div class="ip-lbl">Algorithm</div>
+            <div id="algo-mount"></div>
+          </div>
+          <div class="ip-sec" id="algo-steps-sec">
+            <div class="ip-lbl">How It Works</div>
+            <div class="algo-steps" id="algo-steps"></div>
+          </div>
+          <div class="ip-sec">
+            <div class="ip-lbl">Color Key</div>
+            <div class="color-key">
+              <div class="ck-row"><div class="ck-swatch" style="background:#a78bfa;box-shadow:0 0 10px rgba(167,139,250,0.6)"></div>Start node<span class="ck-count" id="ck0">--</span></div>
+              <div class="ck-row"><div class="ck-swatch" style="background:#f87171;box-shadow:0 0 10px rgba(248,113,113,0.6)"></div>Goal node<span class="ck-count" id="ck1">--</span></div>
+              <div class="ck-row"><div class="ck-swatch" style="background:#fbbf24;box-shadow:0 0 10px rgba(251,191,36,0.6)"></div>Frontier<span class="ck-count" id="ck2">0</span></div>
+              <div class="ck-row"><div class="ck-swatch" style="background:#3b82f6;box-shadow:0 0 10px rgba(59,130,246,0.6)"></div>Visited<span class="ck-count" id="ck3">0</span></div>
+              <div class="ck-row"><div class="ck-swatch" style="background:#10b981;box-shadow:0 0 10px rgba(16,185,129,0.6)"></div>Path<span class="ck-count" id="ck4">--</span></div>
+            </div>
+          </div>
+          <div class="ip-sec">
+            <div class="ip-lbl">Edit Inputs</div>
+            <div id="edit-mount"></div>
+          </div>
+          <div class="ip-sec">
+            <div class="ip-lbl">Problem</div>
+            <div id="prob-mount"></div>
+          </div>
+          <div class="ip-sec">
+            <div class="ip-lbl">Activity Log</div>
+            <div class="log" id="log"></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- load all js files -->
+  <script src="utils.js"></script>
+  <script src="data.js"></script>
+  <script src="maze.js"></script>
+  <script src="app.js"></script>
+
+</body>
+</html>
