@@ -771,6 +771,112 @@ input[type=range] { width: 72px; accent-color: var(--frontier); cursor: pointer;
   overflow: hidden;
   position: relative;
 }
+
+.canvas-area::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 20% 20%, rgba(16,185,129,0.15), transparent 55%),
+    radial-gradient(circle at 80% 30%, rgba(34,197,94,0.12), transparent 58%),
+    radial-gradient(circle at 40% 80%, rgba(14,116,144,0.12), transparent 60%);
+  opacity: 0.6;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.story-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.walker {
+  position: absolute;
+  width: 28px;
+  height: 40px;
+  transform: translate(-50%, -60%);
+  transition: left 0.12s linear, top 0.12s linear, transform 0.12s linear;
+  z-index: 4;
+  filter: drop-shadow(0 4px 8px rgba(15,23,42,0.45));
+}
+
+.walker.walking .walker-legs span {
+  animation: step 0.32s infinite ease-in-out;
+}
+
+.walker-head {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #fde68a;
+  border: 1px solid rgba(15,23,42,0.5);
+  margin: 0 auto 2px;
+  box-shadow: 0 0 10px rgba(250,204,21,0.6);
+}
+
+.walker-body {
+  width: 10px;
+  height: 16px;
+  background: #38bdf8;
+  border-radius: 6px;
+  margin: 0 auto 2px;
+}
+
+.walker-legs {
+  display: flex;
+  justify-content: center;
+  gap: 3px;
+}
+
+.walker-legs span {
+  width: 4px;
+  height: 12px;
+  background: #f97316;
+  border-radius: 4px;
+  display: block;
+}
+
+.home-marker {
+  position: absolute;
+  width: 22px;
+  height: 20px;
+  transform: translate(-50%, -50%);
+  z-index: 3;
+}
+
+.home-roof {
+  width: 0;
+  height: 0;
+  border-left: 12px solid transparent;
+  border-right: 12px solid transparent;
+  border-bottom: 10px solid #f43f5e;
+  margin: 0 auto;
+  filter: drop-shadow(0 2px 6px rgba(244,63,94,0.45));
+}
+
+.home-body {
+  width: 18px;
+  height: 10px;
+  background: #fbbf24;
+  border-radius: 2px;
+  margin: -2px auto 0;
+  border: 1px solid rgba(15,23,42,0.4);
+}
+
+.home-door {
+  width: 6px;
+  height: 6px;
+  background: #0f172a;
+  margin: -7px auto 0;
+  border-radius: 2px;
+}
+
+@keyframes step {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(2px); }
+}
 canvas {
   display: block;
   border-radius: 16px;
@@ -778,6 +884,8 @@ canvas {
   box-shadow: 0 8px 32px rgba(0,0,0,0.3), 0 0 60px rgba(167,139,250,0.1);
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   background: radial-gradient(180deg, #1a1f2e 0%, #0f141a 100%);
+  position: relative;
+  z-index: 2;
 }
 
 canvas:hover {

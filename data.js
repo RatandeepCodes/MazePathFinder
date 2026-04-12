@@ -2,32 +2,23 @@
 // all the problem info, algo descriptions etc
 // keeping it all in one place is easier - sanskriti
 
+// List of problems shown in the sidebar. Each item maps to a module key.
 var problemList = {
   maze:         { label: 'Maze Pathfinding',   icon: '🧩', tag: 'State Space',  unit: 1 },
 };
 
-// which algos are available for each problem
+// Available algorithms per problem (populates the dropdown).
 var problemAlgos = {
-  maze:         ['BFS', 'DFS', 'A*'],
+  maze:         ['A*'],
 };
 
-// descriptions shown in the problem section
+// Problem statement copy shown in the left sidebar.
 var problemDesc = {
-  maze:        'Navigate through a grid maze to find the shortest path from the starting point (purple) to the goal (red). You can draw walls to create obstacles or erase them. Watch as different search algorithms explore the maze and find optimal paths.',
+  maze:        'Guide the explorer through a forest maze to reach his home. Draw or erase trees to shape the paths and watch A* search the safest route from the start to the house.',
 };
 
-// info for each algorithm
+// Metadata used to render the algorithm card (name, complexity, optimality).
 var algoInfo = {
-  'BFS': {
-    name: 'Breadth-First Search', color: '#22d3ee',
-    desc: 'Queue (FIFO). Explores level by level. Guarantees shortest path on unweighted graphs.',
-    tc: 'O(V+E)', sc: 'O(V)', isOptimal: true, isComplete: true
-  },
-  'DFS': {
-    name: 'Depth-First Search', color: '#fb923c',
-    desc: 'Stack (LIFO). Dives deep before backtracking. Memory-efficient but not always optimal.',
-    tc: 'O(V+E)', sc: 'O(V)', isOptimal: false, isComplete: true
-  },
   'A*': {
     name: 'A* Search', color: '#4ade80',
     desc: 'f(n) = g(n) + h(n). Path cost + Manhattan heuristic. Optimal when h is admissible.',
@@ -35,22 +26,8 @@ var algoInfo = {
   },
 };
 
-// step by step explanations shown in panel
+// Step-by-step explanation used in the "How It Works" panel.
 var algoStepsList = {
-  'BFS': [
-    'Add Start to Queue (FIFO)',
-    'Dequeue front node, mark VISITED (blue)',
-    'If node = Goal, trace path back',
-    'Add unvisited neighbors to Queue (amber)',
-    'Repeat - explores level by level',
-  ],
-  'DFS': [
-    'Push Start onto Stack (LIFO)',
-    'Pop top node, mark VISITED (blue)',
-    'If node = Goal, trace path back',
-    'Push unvisited neighbors onto Stack (amber)',
-    'Repeat - dives deep before backtracking',
-  ],
   'A*': [
     'Add Start to priority queue with f=0',
     'Pop node with lowest f = g + h',

@@ -1,5 +1,5 @@
 // maze.js
-// maze pathfinding - BFS DFS A* Greedy UCS
+// maze pathfinding - A* Search
 // sanskriti
 
 var mazeMod = (function() {
@@ -24,7 +24,10 @@ var mazeMod = (function() {
   // current draw tool
   var drawTool = 'wall';
   var mouseIsDown = false;
+  var walkerEl = null;
+  var homeEl = null;
 
+  // Compute pixel size of each cell based on canvas container size.
   function calcCellSize() {
     var area = document.getElementById('canvas-area');
     var maxW = area.clientWidth  - 28;
@@ -34,6 +37,42 @@ var mazeMod = (function() {
     myCanvas.height = cellSize * numRows;
   }
 
+  // Cache overlay DOM elements (walker + home) so we don't query every frame.
+  function ensureOverlayElements() {
+    if (!walkerEl) walkerEl = document.getElementById('walker');
+    if (!homeEl) homeEl = document.getElementById('home-marker');
+  }
+
+  // Scale overlay elements to the current cell size so they stay proportional.
+  function updateOverlaySizes() {
+    ensureOverlayElements();
+    if (!walkerEl || !homeEl) return;
+    var walkerSize = Math.max(22, Math.round(cellSize * 1.05));
+    var homeSize = Math.max(20, Math.round(cellSize * 0.95));
+    walkerEl.style.width = walkerSize + 'px';
+    walkerEl.style.height = Math.round(walkerSize * 1.45) + 'px';
+    homeEl.style.width = homeSize + 'px';
+    homeEl.style.height = Math.round(homeSize * 0.9) + 'px';
+  }
+
+  // Position an overlay element at a given grid cell (centered in the cell).
+  function placeOverlayAtCell(el, r, c) {
+    if (!el) return;
+    var left = myCanvas.offsetLeft + (c * cellSize) + (cellSize * 0.5);
+    var top  = myCanvas.offsetTop + (r * cellSize) + (cellSize * 0.5);
+    el.style.left = left + 'px';
+    el.style.top = top + 'px';
+  }
+
+  // Sync the walker (start) and home (goal) markers with current grid state.
+  function syncStoryMarkers() {
+    ensureOverlayElements();
+    updateOverlaySizes();
+    placeOverlayAtCell(walkerEl, startRow, startCol);
+    placeOverlayAtCell(homeEl, endRow, endCol);
+  }
+
+  // Initialize grid arrays and place default start/end points.
   function setupGrid() {
     gridType  = [];
     gridState = [];
@@ -46,8 +85,10 @@ var mazeMod = (function() {
     endRow   = Math.floor(numRows / 2); endCol   = numCols - 3;
     gridType[startRow][startCol] = START;
     gridType[endRow][endCol]     = END;
+    syncStoryMarkers();
   }
 
+  // Draw one cell based on its type (wall/start/end) and state (frontier/visited/path).
   function drawOneCell(r, c, animate) {
     var x = c * cellSize;
     var y = r * cellSize;
@@ -56,7 +97,7 @@ var mazeMod = (function() {
 
     // pick background color - dark theme
     var bg = '#1a1f2e';
-    if      (gt === WALL)  bg = '#334155';
+    if      (gt === WALL)  bg = '#14532d';
     else if (gt === START) bg = '#1e1b4b';
     else if (gt === END)   bg = '#450a0a';
     else if (gs === PATH)  bg = '#064e3b';
@@ -124,6 +165,7 @@ var mazeMod = (function() {
     }
   }
 
+  // Redraw the full grid from the current gridType/gridState arrays.
   function drawEverything() {
     myCtx.fillStyle = '#0f172a';
     myCtx.fillRect(0, 0, myCanvas.width, myCanvas.height);
@@ -134,6 +176,7 @@ var mazeMod = (function() {
     }
   }
 
+  // Clear algorithm visualization (frontier/visited/path) but keep walls and start/end.
   function clearVisualization() {
     for (var r = 0; r < numRows; r++) {
       for (var c = 0; c < numCols; c++) {
@@ -145,7 +188,7 @@ var mazeMod = (function() {
     }
   }
 
-  // get row/col from mouse event
+  // Convert mouse coordinates to grid row/col.
   function getCellFromEvent(e) {
     var rect = myCanvas.getBoundingClientRect();
     var scaleX = myCanvas.width  / rect.width;
@@ -158,8 +201,9 @@ var mazeMod = (function() {
     return null;
   }
 
-  function applyDrawTool(cell) {
-    if (!cell) return;
+    // Apply the current drawing tool to a cell (wall/erase/start/end).
+    function applyDrawTool(cell) {
+      if (!cell) return;
     var r = cell.r, c = cell.c;
     var gt = gridType[r][c];
 
@@ -183,9 +227,10 @@ var mazeMod = (function() {
       gridType[r][c] = END;
       drawOneCell(r, c);
     }
+    syncStoryMarkers();
   }
 
-  // mouse event listeners
+  // Mouse input: click/drag to paint, right-click to erase.
   myCanvas.addEventListener('mousedown', function(e) {
     if (currentProb !== 'maze' || isRunning) return;
     mouseIsDown = true;
@@ -206,7 +251,7 @@ var mazeMod = (function() {
     drawTool = old;
   });
 
-  // get valid neighbors
+  // Return all valid non-wall neighbors (4-directional movement).
   function getNeighbors(r, c) {
     var dirs = [[0,1],[1,0],[0,-1],[-1,0]];
     var result = [];
@@ -219,11 +264,12 @@ var mazeMod = (function() {
     return result;
   }
 
+  // Manhattan distance heuristic for A* (grid with 4-direction moves).
   function manhattanDist(r1, c1, r2, c2) {
     return Math.abs(r1 - r2) + Math.abs(c1 - c2);
   }
 
-  // trace back path from end to start using parent map
+  // Trace back the path from end to start using the parent map.
   function buildPath(parentMap, er, ec) {
     var path = [];
     var key  = er + ',' + ec;
@@ -235,7 +281,8 @@ var mazeMod = (function() {
     return path;
   }
 
-  // build animation steps for chosen algo
+  // Build the algorithm steps list for animation (A* only).
+  // Each step is one of: visit, frontier, path, fail.
   function buildAlgoSteps(algoName) {
     var startKey = startRow + ',' + startCol;
     var endKey   = endRow   + ',' + endCol;
@@ -243,99 +290,48 @@ var mazeMod = (function() {
     var parents  = {};
     parents[startKey] = null;
 
-    if (algoName === 'BFS' || algoName === 'UCS') {
-      var queue   = [{ r: startRow, c: startCol, g: 0 }];
-      var visited = new Set([startKey]);
+    // A*: priority queue ordered by f = g + h.
+    var pq     = [];
+    var gCosts = {};
+    gCosts[startKey] = 0;
+    var visited = new Set();
 
-      while (queue.length > 0) {
-        if (algoName === 'UCS') queue.sort(function(a, b) { return a.g - b.g; });
-        var cur = queue.shift();
-        steps.push({ type: 'visit', r: cur.r, c: cur.c });
+    pq.push({ r: startRow, c: startCol, f: 0, g: 0 });
+    pq.sort(function(a, b) { return a.f - b.f; });
 
-        if (cur.r === endRow && cur.c === endCol) {
-          steps.push({ type: 'path', path: buildPath(parents, endRow, endCol) });
-          return steps;
-        }
-        getNeighbors(cur.r, cur.c).forEach(function(nb) {
-          var k = nb.r + ',' + nb.c;
-          if (!visited.has(k)) {
-            visited.add(k);
-            parents[k] = cur.r + ',' + cur.c;
-            queue.push({ r: nb.r, c: nb.c, g: cur.g + 1 });
-            steps.push({ type: 'frontier', r: nb.r, c: nb.c });
-          }
-        });
+    while (pq.length > 0) {
+      var cur = pq.shift();
+      var curKey = cur.r + ',' + cur.c;
+      if (visited.has(curKey)) continue;
+      visited.add(curKey);
+      steps.push({ type: 'visit', r: cur.r, c: cur.c });
+
+      if (cur.r === endRow && cur.c === endCol) {
+        steps.push({ type: 'path', path: buildPath(parents, endRow, endCol) });
+        return steps;
       }
 
-    } else if (algoName === 'DFS') {
-      var stack   = [{ r: startRow, c: startCol }];
-      var visited = new Set([startKey]);
-
-      while (stack.length > 0) {
-        var cur = stack.pop();
-        var curKey = cur.r + ',' + cur.c;
-        if (visited.has(curKey) && curKey !== startKey) continue;
-        visited.add(curKey);
-        steps.push({ type: 'visit', r: cur.r, c: cur.c });
-
-        if (cur.r === endRow && cur.c === endCol) {
-          steps.push({ type: 'path', path: buildPath(parents, endRow, endCol) });
-          return steps;
+      getNeighbors(cur.r, cur.c).forEach(function(nb) {
+        var nk  = nb.r + ',' + nb.c;
+        var ng  = cur.g + 1;
+        if (gCosts[nk] === undefined || ng < gCosts[nk]) {
+          gCosts[nk]  = ng;
+          parents[nk] = curKey;
+          var h = manhattanDist(nb.r, nb.c, endRow, endCol);
+          var fVal = ng + h;
+          pq.push({ r: nb.r, c: nb.c, f: fVal, g: ng });
+          pq.sort(function(a, b) { return a.f - b.f; });
+          steps.push({ type: 'frontier', r: nb.r, c: nb.c });
         }
-        getNeighbors(cur.r, cur.c).forEach(function(nb) {
-          var k = nb.r + ',' + nb.c;
-          if (!visited.has(k)) {
-            parents[k] = cur.r + ',' + cur.c;
-            stack.push(nb);
-            steps.push({ type: 'frontier', r: nb.r, c: nb.c });
-          }
-        });
-      }
-
-    } else {
-      // A* and Greedy
-      var pq     = [];
-      var gCosts = {};
-      gCosts[startKey] = 0;
-      var visited = new Set();
-
-      pq.push({ r: startRow, c: startCol, f: 0, g: 0 });
-      pq.sort(function(a, b) { return a.f - b.f; });
-
-      while (pq.length > 0) {
-        var cur = pq.shift();
-        var curKey = cur.r + ',' + cur.c;
-        if (visited.has(curKey)) continue;
-        visited.add(curKey);
-        steps.push({ type: 'visit', r: cur.r, c: cur.c });
-
-        if (cur.r === endRow && cur.c === endCol) {
-          steps.push({ type: 'path', path: buildPath(parents, endRow, endCol) });
-          return steps;
-        }
-
-        getNeighbors(cur.r, cur.c).forEach(function(nb) {
-          var nk  = nb.r + ',' + nb.c;
-          var ng  = cur.g + 1;
-          if (gCosts[nk] === undefined || ng < gCosts[nk]) {
-            gCosts[nk]  = ng;
-            parents[nk] = curKey;
-            var h = manhattanDist(nb.r, nb.c, endRow, endCol);
-            var fVal = algoName === 'A*' ? ng + h : h;
-            pq.push({ r: nb.r, c: nb.c, f: fVal, g: ng });
-            pq.sort(function(a, b) { return a.f - b.f; });
-            steps.push({ type: 'frontier', r: nb.r, c: nb.c });
-          }
-        });
-      }
+      });
     }
 
     steps.push({ type: 'fail' });
     return steps;
   }
 
-  // generate maze using recursive backtracker (dfs)
-  function makeMaze() {
+    // Generate a random maze using recursive backtracker carving.
+    function makeMaze() {
     for (var r = 0; r < numRows; r++) {
       for (var c = 0; c < numCols; c++) {
         if (gridType[r][c] !== START && gridType[r][c] !== END) {
@@ -386,8 +382,10 @@ var mazeMod = (function() {
     gridState = [];
     for (var r = 0; r < numRows; r++) gridState.push(new Uint8Array(numCols));
     drawEverything();
+    syncStoryMarkers();
   }
 
+  // Build extra toolbar buttons specific to the maze problem.
   function buildExtraButtons() {
     document.getElementById('extra-tools').innerHTML =
       '<button class="btn" onclick="mazeMod.maze()">Maze</button>' +
@@ -399,14 +397,17 @@ var mazeMod = (function() {
 
     setTool: function(t) { drawTool = t; },
 
+    // Resize the grid and reinitialize start/end and walls.
     resizeGrid: function(n) {
       stopEverything();
       numRows = n; numCols = n;
       calcCellSize();
       setupGrid();
       drawEverything();
+      syncStoryMarkers();
     },
 
+    // Fill the board with a generated maze layout.
     maze: function() {
       stopEverything();
       clearVisualization();
@@ -414,6 +415,7 @@ var mazeMod = (function() {
       addLog('Maze generated using recursive backtracker', 'hi');
     },
 
+    // Scatter random walls while keeping start/end intact.
     randomWalls: function() {
       stopEverything();
       clearVisualization();
@@ -428,6 +430,7 @@ var mazeMod = (function() {
       addLog('Random walls placed', 'hi');
     },
 
+    // Initial module setup when maze problem is selected.
     init: function() {
       calcCellSize();
       setupGrid();
@@ -436,18 +439,27 @@ var mazeMod = (function() {
       addLog('Draw walls then click Run', 'hi');
       setColorKey(0, 'Set');
       setColorKey(1, 'Set');
+      syncStoryMarkers();
     },
 
+    // Run the selected algorithm and animate the resulting steps.
     run: function() {
       clearVisualization();
       var algo = document.getElementById('algo-sel').value;
       addLog('Running ' + algo + ' from (' + startRow + ',' + startCol + ') to (' + endRow + ',' + endCol + ')', 'hi');
       setPhase('running', algo + ' searching...');
       highlightStep(0);
+      ensureOverlayElements();
+      if (walkerEl) {
+        // Snap the walker back to the start before the animation begins.
+        walkerEl.classList.remove('walking');
+        placeOverlayAtCell(walkerEl, startRow, startCol);
+      }
 
       var steps = buildAlgoSteps(algo);
       var vc = 0, fc = 0;
 
+      // Animate each step and update stats, logs, and visuals.
       runAnimation(steps, function(step) {
         if (step.type === 'frontier') {
           if (gridType[step.r][step.c] !== START && gridType[step.r][step.c] !== END) {
@@ -472,16 +484,20 @@ var mazeMod = (function() {
         } else if (step.type === 'path') {
           highlightStep(2);
           var pathCells = step.path;
+          if (walkerEl) walkerEl.classList.add('walking');
           pathCells.forEach(function(p, i) {
             var t = setTimeout(function() {
               if (gridType[p.r][p.c] !== START && gridType[p.r][p.c] !== END) {
                 gridState[p.r][p.c] = PATH;
                 drawOneCell(p.r, p.c);
               }
+              // Move the walker to the next cell in the final path.
+              placeOverlayAtCell(walkerEl, p.r, p.c);
               if (i === pathCells.length - 1) {
                 onPathFound(pathCells.length + ' steps');
                 setPhase('done', 'Path found! ' + pathCells.length + ' steps, visited ' + visitedCount);
                 addLog('PATH FOUND - ' + pathCells.length + ' steps, visited ' + visitedCount + ' nodes', 'ok');
+                if (walkerEl) walkerEl.classList.remove('walking');
                 playSuccessSound();
                 myCanvas.classList.add('canvas-success');
                 setTimeout(function() {
@@ -496,13 +512,22 @@ var mazeMod = (function() {
           onPathFound('No path');
           setPhase('error', 'No path - walls block all routes');
           addLog('No path found', 'err');
+          if (walkerEl) walkerEl.classList.remove('walking');
           playFailSound();
         }
       });
     },
 
-    reset: function() { clearVisualization(); drawEverything(); },
-    clear: function() { setupGrid(); drawEverything(); },
+    reset: function() {
+      clearVisualization();
+      drawEverything();
+      syncStoryMarkers();
+    },
+    clear: function() {
+      setupGrid();
+      drawEverything();
+      syncStoryMarkers();
+    },
   };
 
 })();

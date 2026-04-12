@@ -79,6 +79,21 @@
         <div class="canvas-wrap">
           <div class="canvas-area" id="canvas-area">
             <canvas id="cv"></canvas>
+            <div class="story-layer" aria-hidden="true">
+              <div id="walker" class="walker">
+                <div class="walker-head"></div>
+                <div class="walker-body"></div>
+                <div class="walker-legs">
+                  <span></span>
+                  <span></span>
+                </div>
+              </div>
+              <div id="home-marker" class="home-marker">
+                <div class="home-roof"></div>
+                <div class="home-body"></div>
+                <div class="home-door"></div>
+              </div>
+            </div>
           </div>
 
           <!-- status bar -->
@@ -108,8 +123,8 @@
           <div class="ip-sec">
             <div class="ip-lbl">Color Key</div>
             <div class="color-key">
-              <div class="ck-row"><div class="ck-swatch" style="background:#a78bfa;box-shadow:0 0 10px rgba(167,139,250,0.6)"></div>Start node<span class="ck-count" id="ck0">--</span></div>
-              <div class="ck-row"><div class="ck-swatch" style="background:#f87171;box-shadow:0 0 10px rgba(248,113,113,0.6)"></div>Goal node<span class="ck-count" id="ck1">--</span></div>
+              <div class="ck-row"><div class="ck-swatch" style="background:#a78bfa;box-shadow:0 0 10px rgba(167,139,250,0.6)"></div>Explorer<span class="ck-count" id="ck0">--</span></div>
+              <div class="ck-row"><div class="ck-swatch" style="background:#f87171;box-shadow:0 0 10px rgba(248,113,113,0.6)"></div>Home<span class="ck-count" id="ck1">--</span></div>
               <div class="ck-row"><div class="ck-swatch" style="background:#fbbf24;box-shadow:0 0 10px rgba(251,191,36,0.6)"></div>Frontier<span class="ck-count" id="ck2">0</span></div>
               <div class="ck-row"><div class="ck-swatch" style="background:#3b82f6;box-shadow:0 0 10px rgba(59,130,246,0.6)"></div>Visited<span class="ck-count" id="ck3">0</span></div>
               <div class="ck-row"><div class="ck-swatch" style="background:#10b981;box-shadow:0 0 10px rgba(16,185,129,0.6)"></div>Path<span class="ck-count" id="ck4">--</span></div>
