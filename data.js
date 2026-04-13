@@ -1,6 +1,7 @@
 // data.js
 // all the problem info, algo descriptions etc
-// keeping it all in one place is easier - sanskriti
+// keeping it all in one place is easier
+// done by Ratandeep Singh
 
 // List of problems shown in the sidebar. Each item maps to a module key.
 var problemList = {

@@ -1,7 +1,7 @@
 // app.js
 // main controller - builds sidebar, handles switching between problems
 // ties everything together
-// sanskriti - ai project
+// done by Ratandeep Singh
 
 // build the sidebar from problemList
 function buildSidebar() {

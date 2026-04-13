@@ -1,6 +1,7 @@
 // maze.js
 // maze pathfinding - A* Search
-// sanskriti
+// done by Ratandeep Singh
+
 
 var mazeMod = (function() {
 

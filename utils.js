@@ -1,5 +1,6 @@
 // utils.js - helper functions used everywhere
-// written by sanskriti
+// done by Ratandeep Singh
+
 
 var myCanvas = document.getElementById('cv');
 var myCtx    = myCanvas.getContext('2d');
